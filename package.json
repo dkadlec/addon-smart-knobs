@@ -1,5 +1,5 @@
 {
-  "name": "storybook-addon-smart-knobs",
+  "name": "@productboard/storybook-addon-smart-knobs",
   "version": "3.2.10",
   "description": "Automatically created knobs for storybook.",
   "main": "dist/index.js",
@@ -8,7 +8,7 @@
     "clean": "rm -Rf ./dist",
     "compile": "babel ./src --out-dir ./dist",
     "storybook": "start-storybook -p 9010",
-    "prepublish": "npm run clean && npm run compile"
+    "prepublishOnly": "npm run clean && npm run compile"
   },
   "author": "",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "@storybook/react": "^3.2.10",
     "react": "^15.6.2"
   },
-  "devDependencies": {
+  "dependencies": {
     "@storybook/addon-info": "^3.2.10",
     "@storybook/addon-knobs": "^3.2.10",
     "@storybook/addon-options": "^3.2.10",
