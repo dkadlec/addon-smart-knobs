@@ -11,12 +11,28 @@ export const addKnobResolver = ({ name, resolver, weight = 0 }) => (knobResolver
  */
 
 export const propTypeKnobResolver = (name, knob, ...args) =>
-  (propName, propType, value, propTypes, defaultProps) =>
-    propType.flowType.name === name ? knob(propName, value, ...args) : undefined
+  (propName, propType, value, propTypes, defaultProps) => {
+    let propTypeName = ''
+    if (propType.flowType) propTypeName = propType.flowType.name
+    if (propType.type) propTypeName = propType.type.name
+
+    return propTypeName === name ? knob(propName, value, ...args) : undefined
+  }
 
 /* eslint-disable no-multi-spaces */
 // Default simple PropType based knob map.
 const propTypeKnobsMap = [
+  { name: 'string', knob: text },
+  { name: 'number', knob: number },
+  { name: 'bool',   knob: boolean },
+  { name: 'func',   knob: (name, value) => value || action(name) },
+  { name: 'object', knob: object },
+  { name: 'node', knob: text },
+  { name: 'element', knob: text },
+]
+
+// Flow based knob map.
+const flowTypeKnobsMap = [
   { name: 'string',  knob: text },
   { name: 'number',  knob: number },
   { name: 'boolean', knob: boolean },
@@ -27,7 +43,12 @@ const propTypeKnobsMap = [
   { name: 'unknown', knob: text }, // React.Node (children)
 ]
 
-propTypeKnobsMap.forEach(({ name, knob, args = [] }, weight) => addKnobResolver({
+const knobsMap = [
+  ...propTypeKnobsMap,
+  ...flowTypeKnobsMap,
+]
+
+knobsMap.forEach(({ name, knob, args = [] }, weight) => addKnobResolver({
   weight: weight * 10,
   name: `PropTypes.${name}`,
   resolver: propTypeKnobResolver(name, knob, ...args)
@@ -38,34 +59,52 @@ addKnobResolver({
   name: 'PropTypes.oneOf',
   resolver: (propName, propType, value, propTypes, defaultProps) => {
     /* eslint-disable quotes */
-    if (propType.flowType.name === 'union' && propType.flowType.elements.length) {
-      try {
-        const options = propType.flowType.elements
-        .map(value => value.value)
-        // Cleanup string quotes, if any.
-        .map(value => value[0] === "'" && value[value.length - 1] === "'"
-        ? '"' + value.replace(/'"'/g, '\\"').slice(1, value.length - 1) + '"' : value)
-        .map(JSON.parse)
-        .reduce((res, value) => ({ ...res, [value]: value }), {})
-
-        return select(propName, { '': '--', ...options }, defaultProps[propName])
-      }
-      catch (e) { }
-    }
-    if (propType.flowType.name === 'literal') {
-      try {
-        const options = []
-          .concat(propType.flowType)
+    if (propType.flowType) {
+      if (propType.flowType.name === 'union' && propType.flowType.elements.length) {
+        try {
+          const options = propType.flowType.elements
           .map(value => value.value)
           // Cleanup string quotes, if any.
           .map(value => value[0] === "'" && value[value.length - 1] === "'"
-            ? '"' + value.replace(/'"'/g, '\\"').slice(1, value.length - 1) + '"' : value)
+          ? '"' + value.replace(/'"'/g, '\\"').slice(1, value.length - 1) + '"' : value)
           .map(JSON.parse)
           .reduce((res, value) => ({ ...res, [value]: value }), {})
 
-        return select(propName, { '': '--', ...options }, defaultProps[propName])
+          return select(propName, { '': '--', ...options }, defaultProps[propName])
+        }
+        catch (e) { }
       }
-      catch (e) { }
+      if (propType.flowType.name === 'literal') {
+        try {
+          const options = []
+            .concat(propType.flowType)
+            .map(value => value.value)
+            // Cleanup string quotes, if any.
+            .map(value => value[0] === "'" && value[value.length - 1] === "'"
+              ? '"' + value.replace(/'"'/g, '\\"').slice(1, value.length - 1) + '"' : value)
+            .map(JSON.parse)
+            .reduce((res, value) => ({ ...res, [value]: value }), {})
+
+          return select(propName, { '': '--', ...options }, defaultProps[propName])
+        }
+        catch (e) { }
+      }
+    }
+    else if (propType.type) {
+      if (propType.type.name === 'enum' && propType.type.value.length) {
+        try {
+          const options = propType.type.value
+          .map(value => value.value)
+          // Cleanup string quotes, if any.
+          .map(value => value[0] === "'" && value[value.length - 1] === "'"
+          ? '"' + value.replace(/'"'/g, '\\"').slice(1, value.length - 1) + '"' : value)
+          .map(JSON.parse)
+          .reduce((res, value) => ({ ...res, [value]: value }), {})
+
+          return select(propName, { '': '--', ...options }, defaultProps[propName])
+        }
+        catch (e) { }
+      }
     }
   }
 })
@@ -86,10 +125,10 @@ export const withSmartKnobs = (story, context) => {
   const finalProps = props ? Object.keys(props).reduce((acc, n) => {
     const item = props[n]
 
-    if (!item.flowType) {
-      console.warn(`There is a prop with defaultValue ${item.defaultValue.value} but it wasnt specified on element.propTypes. Check story: "${context.kind}".`)
-      return acc
-    }
+    // if (!item.flowType) {
+    //   console.warn(`There is a prop with defaultValue ${item.defaultValue.value} but it wasnt specified on element.propTypes. Check story: "${context.kind}".`)
+    //   return acc
+    // }
 
     return {
       ...acc,

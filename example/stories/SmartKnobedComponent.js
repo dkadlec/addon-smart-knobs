@@ -1,8 +1,22 @@
-import React, { PropTypes } from 'react'
+// @flow
+
+import * as React from 'react'
+import PropTypes from 'prop-types'
 
 import './SmartKnobedComponent.css'
 
-const SmartKnobedComponent = props => (
+type Props = {
+  bool: boolean,
+  number: number,
+  string: string,
+  function: () => void,
+  oneOf: 'one' | 'two' | 'three',
+  object: Object,
+  element: HTMLElement,
+  node: React.Node,
+}
+
+const SmartKnobedComponent = (props: Props) => (
   <table className='SmartKnobedComponent'>
     <thead>
       <tr>
@@ -16,7 +30,7 @@ const SmartKnobedComponent = props => (
       {Object.keys(props).map(prop => (
         <tr key={ prop }>
           <th>{ prop }</th>
-          <td>{ SmartKnobedComponent.__docgenInfo.props[prop].type.name }</td>
+          <td>{ (SmartKnobedComponent.__docgenInfo.props[prop].flowType && SmartKnobedComponent.__docgenInfo.props[prop].flowType.name) || SmartKnobedComponent.__docgenInfo.props[prop].type.name}</td>
           <td>{ typeof props[prop] === 'function' ? <i>function</i> : JSON.stringify(props[prop]) || '(empty)' }</td>
           <td>{ typeof props[prop] }</td>
         </tr>

@@ -2,6 +2,8 @@
 
 This Storybook plugin uses `@storybook/addon-knobs` but creates the knobs automatically based on PropTypes.
 
+This fork has a goal of adding support for creating knobs from Flow type definitions next to PropTypes.
+
 ## Installation:
 
 ```
